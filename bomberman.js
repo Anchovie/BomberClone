@@ -160,6 +160,7 @@ function Player(x, y){
     this.vel = createVector(6,6);
     this.dir = DOWN;
     this.moving = false;
+    this.powerups = [];
 
     this.lives = 2;
     this.hpMax = 4;
@@ -215,41 +216,80 @@ function Player(x, y){
         for (var i=0; i<this.hp; i++){
             rect(840+23+i*(73/(this.hpMax)),76,73/(this.hpMax), 9); // 96 85
         }
+        for (var i=0; i<this.powerups.length; i++){
+            switch (this.powerups[i]){
+                case BOMBPLUS:
+                    image(sprites,840+20,203,30,30,30,270,30,30);
+                    break;
+                case FIREPLUS:
+                    image(sprites,840+20,239,30,30,0,240,30,30);
+                    break;
+                case FIREBREAK:
+                    image(sprites,840+20,275,30,30,30,240,30,30);
+                    break;
+                case BUILDER:
+                    image(sprites,840+20,311,30,30,90,240,30,30);
+                    break;
+                case SPEEDPLUS:
+                    image(sprites,840+20,347,30,30,0,270,30,30);
+                    break;
+                case HEALTHPLUS:
+                    image(sprites,840+20,383,30,30,60,240,30,30);
+                    break;
+                case LIFEPLUS:
+                    image(sprites,840+20,419,30,30,60,270,30,30);
+                    break;
+                case QUESTION:
+                    image(sprites,840+20,455,30,30,90,270,30,30);
+                    break;
+            }
+        }
 
     }
 
     this.move = function(dir){
+        var collision;
         if (!dir) return;
-        if (this.x<0) this.x=2;
-        if (this.x>width-this.r) this.x = width-this.r-2;
-        if (this.y<0+30) this.y=30;
-        if (this.y>height-this.r) this.y = height-this.r-30;
+        //if (this.x<0) collision=true;
+        //if (this.x>width-this.r) collision=true;
+        //if (this.y<0+) collision=true;
+        //if (this.y>height-this.r) collision=true;
         var prevX = this.x;
         var prevY = this.y;
+
         
         this.x += (dir.x*this.vel.x);
         this.y += (dir.y*this.vel.y);
         this.xind = floor(this.x/tileSize);
         this.yind = floor(this.y/tileSize);
 
-        var collision = this.collide(matrix[this.yind][this.xind]);
-        var xstart = max(this.xind-1,0);
-        if (xstart < 0) xstart=0;
-        var ystart = max(this.yind-1,0);
-        if (ystart < 0 ) ystart=0;
-        var xend = min(this.xind+1,cols-1);
-        if (xend > cols) xend = cols-1;
-        var yend = min(this.yind+1,rows-1);
-        if (yend > rows) yend = rows-1;
-        for (var y = ystart; y<=yend; y++){
-            for (var x = xstart; x<=xend; x++){
-                collision = collision || this.collide(matrix[y][x]);
-                if (collision && matrix[y][x] instanceof Upgrade){
-                    player.getUpgrade(matrix[y][x].type);
-                    matrix[y][x] = 0;
+        collision = collision || collideLineRect(0,0,840,0,this.x,this.y,this.r,this.r);
+        collision = collision || collideLineRect(0,0,0,840,this.x,this.y,this.r,this.r);
+        collision = collision || collideLineRect(840,0,840,840,this.x,this.y,this.r,this.r);
+        collision = collision || collideLineRect(0,840,840,840,this.x,this.y,this.r,this.r);
+
+        if (!collision){
+            collision = this.collide(matrix[this.yind][this.xind]);
+            var xstart = max(this.xind-1,0);
+            if (xstart < 0) xstart=0;
+            var ystart = max(this.yind-1,0);
+            if (ystart < 0 ) ystart=0;
+            var xend = min(this.xind+1,cols-1);
+            if (xend > cols) xend = cols-1;
+            var yend = min(this.yind+1,rows-1);
+            if (yend > rows) yend = rows-1;
+            for (var y = ystart; y<=yend; y++){
+                for (var x = xstart; x<=xend; x++){
+                    collision = collision || this.collide(matrix[y][x]);
+                    if (this.collide(matrix[y][x]) && matrix[y][x] instanceof Upgrade){
+                        player.getUpgrade(matrix[y][x].type);
+                        matrix[y][x] = 0;
+                    }
                 }
             }
         }
+
+
         
         
         if (collision){
@@ -288,6 +328,35 @@ function Player(x, y){
     }
 
     this.getUpgrade = function(powerup){
+        if (this.powerups.indexOf(powerup) == -1){
+            this.powerups.push(powerup);
+        }
+        switch(powerup){
+            case FIREPLUS:
+                this.bomb_reach++;
+                break;
+            case BOMBPLUS:
+                this.max_bombs++;
+                break;
+            case SPEEDPLUS:
+                this.vel.mult(1.2);
+                break;
+            case HEALTHPLUS:
+                this.hp = ++this.hpMax;
+                break;
+            case LIFEPLUS:
+                this.lives++;
+                break;
+            case FIREBREAK:
+                //
+                break;
+            case BUILDER:
+                //
+                break;
+            default:
+                console.log("DEFAULT UPGRADE");
+                break;
+        }
         console.log("Got powerup: " + powerup);
     }
 
